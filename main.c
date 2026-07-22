@@ -29,6 +29,7 @@
 // Use project enums instead of #define for ON and OFF.
 
 #include <xc.h>
+#include "Timers.h"
 
 unsigned char task = 0;
 unsigned char conta_250us = 0;
@@ -44,33 +45,32 @@ void init(void) {
     INTCONbits.PEIE = 1;
     INTCONbits.GIE = 1;
     TMR2ON = 1;
+    InitTimer();
 }
 
 void main(void) {
     init();
+    
     while (1) 
      if (conta_5ms < 5) {
       __asm("nop\n");
      }
      else {
-      //@ 25 ms
       conta_5ms = 0;
+      //@ 25 ms   
+      TimerMgr();
       
       switch (task++) {
         case 0:
-            PORTCbits.RC0 ^= 1;
-           __asm("nop\n");
+             __asm("nop\n");
             break;
         case 1:
-            PORTCbits.RC1 ^= 1;
-            __asm("nop\n");
+             __asm("nop\n");
             break;
         case 2:
-            PORTCbits.RC2 ^= 1;
             __asm("nop\n");
             break;
         case 3:
-            PORTCbits.RC3 ^= 1;
             __asm("nop\n");
             task = 0;
             break;
