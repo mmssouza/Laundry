@@ -29,6 +29,7 @@
 // Use project enums instead of #define for ON and OFF.
 
 #include <xc.h>
+#include "IO.h"
 #include "Timers.h"
 
 unsigned char task = 0;
@@ -88,6 +89,7 @@ void __interrupt() ISR() {
             // @ 5 ms
             conta_250us = 0;
             conta_5ms++;
+            InputDebounceMgr(); 
         }   
     }
 }
