@@ -7,7 +7,7 @@
 
 // PIC16F884 Configuration Bit Settings
 
-// 'C' source line config statements
+// 'C' source line main.c:63:13: warning: implicit declaration of function 'Washing_Cycle_Manager' is invalid in C99 [-Wimplicit-function-declaration]config statements
 
 // CONFIG1
 #pragma config FOSC = XT        // Oscillator Selection bits (XT oscillator: Crystal/resonator on RA6/OSC2/CLKOUT and RA7/OSC1/CLKIN)
@@ -31,48 +31,67 @@
 #include <xc.h>
 #include "IO.h"
 #include "Timers.h"
+#include "cycle.h"
+
+
 
 unsigned char task = 0;
 unsigned char conta_250us = 0;
-unsigned char conta_5ms = 0;
+unsigned char conta_1ms = 0;
+enum { STANDBY = 0,PAUSE, WASH} ProductState;
 
-void init(void) {
-    TRISC = 0;
-    PORTC = 0;
+void Init(void) {
+    InitIO();
     T2CON = 0x01;   // Timer2: Pre 1:4 Post 1:1
     PR2 = 124;    // Timer2 overflow @ 250 us
+    PIE2 = 0;
     PIR1bits.TMR2IF = 0;
     PIE1bits.TMR2IE = 1;
     INTCONbits.PEIE = 1;
     INTCONbits.GIE = 1;
     TMR2ON = 1;
     InitTimer();
+    ProductState = WASH;
+    WashingPhase = PRE_WASH_PHASE;
+    WashingPhaseStep = FILLING;     
 }
 
+void StateManager() {
+    switch (ProductState) {
+        case STANDBY:
+            break;
+        case PAUSE:
+            break;
+        case WASH:
+            WashingCycleManager();
+            break;
+    }
+}
 void main(void) {
-    init();
+    Init();
     
     while (1) 
-     if (conta_5ms < 5) {
+     if (conta_1ms < 5) {
       __asm("nop\n");
      }
      else {
-      conta_5ms = 0;
-      //@ 25 ms   
-      TimerMgr();
-      
+      conta_1ms = 0;
+      //@ 5 ms   
+           
       switch (task++) {
         case 0:
-             __asm("nop\n");
+            //@ 20 ms
+             TimerMgr();
             break;
         case 1:
-             __asm("nop\n");
+            __asm("nop\n");
+            //UIManager();
             break;
         case 2:
-            __asm("nop\n");
+            StateManager();
             break;
         case 3:
-            __asm("nop\n");
+            AgitateManager();
             task = 0;
             break;
         default:
@@ -82,14 +101,32 @@ void main(void) {
 }
 
 void __interrupt() ISR() {
+    static uint8_t IrqState = 0;
+    
     if (PIR1bits.TMR2IF) {
         PIR1bits.TMR2IF = 0;
+        OutputDrv();
         // @ 250 us
-        if (++conta_250us >= 20) {
-            // @ 5 ms
+        if (++conta_250us >= 4) {
             conta_250us = 0;
-            conta_5ms++;
-            InputDebounceMgr(); 
-        }   
+            conta_1ms++; 
+        }
+        switch (IrqState++)
+        {
+          case 0:
+           // @ 1 ms 
+           InputDebounceHandler();
+           break;
+          case 1:
+           //UserInterfaceDrv();         
+           break;
+          case 2:
+           __asm("nop\n");
+           break;
+          case 3:
+           __asm("nop\n");
+           IrqState = 0;
+           break;
+         }
+      }
     }
-}

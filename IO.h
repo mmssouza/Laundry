@@ -11,8 +11,9 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
+#include <xc.h>
 #include <stdint.h>
+    
 #define OFF 0
 #define ON  1
     
@@ -27,9 +28,9 @@ extern "C" {
 #define PR_MID      PORTCbits.RC5
 #define PR_HI       PORTCbits.RC4 
 
-typedef struct {
+typedef union {
     uint8_t byte;
-    union {
+    struct {
             uint8_t Pr_Lo:  1;
             uint8_t Pr_Hi:  1;
             uint8_t Pr_Mid: 1;
@@ -41,20 +42,39 @@ typedef struct {
 
 input_t Input;
 
-struct {
+union {
     uint8_t byte;
-    union {
+    struct {
             uint8_t WaterValve: 1;
             uint8_t DrainPump:  1;
-            uint8_t Cw:         1;
-            uint8_t Ccw:        1;
+            uint8_t CW:         1;
+            uint8_t CCW:        1;
             uint8_t unused:     4;
     } bit;
 } Output;
 
+struct {
+    uint16_t Ton;
+    uint16_t Toff;
+} Stroke;
+
+uint8_t AgStep = 0;
+
 void InitIO(void);
 void AllOutputsOff(void);
-void InputDebounceMgr(void);
+void InputDebounceHandler(void);
+void StrokeOn(uint16_t t_on,uint16_t t_off);
+void StrokeOff(void);
+void AgitateManager(void);
+void OutputDrv(void);
+
+#define MtCW_ON()  {Output.bit.CW = ON;}
+#define MtCCW_ON() {Output.bit.CCW = ON;}
+#define Mt_OFF() {Output.bit.CW = OFF;Output.bit.CCW = OFF;}
+#define WaterValve_ON()  {Output.bit.WaterValve = ON;}
+#define WaterValve_OFF() {Output.bit.WaterValve = OFF;}
+#define DrainPump_ON() {Output.bit.DrainPump = ON;}
+#define DrainPump_OFF() {Output.bit.DrainPump = OFF;}
 
 #ifdef	__cplusplus
 }

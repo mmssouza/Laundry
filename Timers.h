@@ -14,14 +14,15 @@ extern "C" {
 
 #define N_TIMERS 2
     
-// 1h 49min max (T_1SEC * 109 )
-#define TBASE_100MS 4   
-#define T_1SEC    1    
-#define T_1MIN  (T_1SEC*60)    
+// Max: 3 h 39 min (T_BASE_100ms * 65536 )
+#define TBASE_100MS 5   
+#define T_1SEC    9    
+#define T_1MIN  (T_1SEC*60)
+#define T_1H (T_1MIN*60)  
 
 
-#define TIMER1 0
-#define TIMER2 1
+#define WASH_TIMER 1
+#define FILL_DRAIN_TIMER 2
 
 uint8_t TmrBaseCounter;
 
