@@ -7,6 +7,8 @@
       <itemPath>Timers.h</itemPath>
       <itemPath>IO.h</itemPath>
       <itemPath>cycle.h</itemPath>
+      <itemPath>UI.h</itemPath>
+      <itemPath>main.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -19,6 +21,7 @@
       <itemPath>Timers.c</itemPath>
       <itemPath>IO.c</itemPath>
       <itemPath>Cycle.c</itemPath>
+      <itemPath>UI.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -583,7 +586,7 @@
         <property key="stack-size-high" value="auto"/>
         <property key="stack-size-low" value="auto"/>
         <property key="stack-size-main" value="auto"/>
-        <property key="stack-type" value="compiled"/>
+        <property key="stack-type" value="reentrant"/>
         <property key="user-pack-device-support" value=""/>
       </XC8-config-global>
     </conf>

@@ -3,117 +3,250 @@
 #include "IO.h"
 
 void PreWash(void){
-    static uint8_t init_state = 1;
-    switch (WashingPhaseStep) {
+    
+    switch (WashingStep) {
         case FILLING:
             WaterValve_ON();
-            if (init_state) {
+            if (cycle_init_state) {
                 LoadTimer(FILL_DRAIN_TIMER,T_1MIN*5);
-                init_state = 0;
-            } else {
-                if (TimerExpired(FILL_DRAIN_TIMER)) {
-                  __asm("nop\n");
-                }
-                if (PR_LO == ON)  {
-                 WaterValve_OFF();
-                 LoadTimer(WASH_TIMER,T_1SEC*15);
-                 StrokeOn(280,320);
-                 WashingPhaseStep = WASHING;
-                 init_state = 1;
-             }
+                cycle_init_state = 0;
+                return;
             }
+                      
+            if (PR_LO == ON)  {
+                // Nível do pressostado indica fim de enchimento
+                WaterValve_OFF();
+                LoadTimer(WASH_TIMER,T_1SEC*15);
+                WashingStep = WASHING;
+                cycle_init_state = 1;
+            } else if (TimerExpired(FILL_DRAIN_TIMER)) {
+                // Timeout de enchimento
+                  __asm("nop\n");
+            }            
             break;
             
-        case WASHING:            
+        case WASHING:  
+            if (cycle_init_state == 1)
+            { 
+                ResumeTimer(WASH_TIMER);
+                StrokeOn(280,320);
+                cycle_init_state = 0;
+                return;
+            }
+            
             if (TimerExpired(WASH_TIMER)) {
                 StrokeOff();
-                WashingPhaseStep = DRAINING;
+                WashingStep = FILLING;
+                WashingPhase = WASH_PHASE;
+                cycle_init_state = 1;
             }
             break;
-        case DRAINING:
-            DrainPump_ON();
-            if (init_state) {
-                LoadTimer(FILL_DRAIN_TIMER,T_1MIN*5);
-                init_state = 0;
-            } else {
-                if (TimerExpired(FILL_DRAIN_TIMER)) {
-                  __asm("nop\n");
-                }
-                if (PR_LO == OFF)  {
-                 LoadTimer(WASH_TIMER,T_1SEC*15);
-                 WashingPhaseStep = SPINNING;
-                 init_state = 1;
-                }
-             }
-            break;
-        case SPINNING:
-            DrainPump_ON();
-            if (init_state) {
-                if (TimerExpired(WASH_TIMER)) {
-                 MtCW_ON();
-                 LoadTimer(WASH_TIMER,T_1SEC*10);
-                 init_state = 0;
-                }   
-            } else {
-                MtCW_ON();
-                if (TimerExpired(WASH_TIMER)) {
-                 Mt_OFF();
-                 LoadTimer(WASH_TIMER,T_1SEC*30);
-                 WashingPhaseStep = END_STEP;        
-                }
-            }           
-            break;
-            case END_STEP:
-             DrainPump_ON();
-             Mt_OFF();
-             if (TimerExpired(WASH_TIMER)) {
-                 DrainPump_OFF();
-                 WashingPhaseStep = FILLING; 
-                 //WashingPhase = WASH_PHASE;
-                } 
-             break;
-    }
-    
+        default:
+         __asm("nop\n");    
+        
+    }    
 };
 
 void Wash(void){
-    switch (WashingPhaseStep) {
+  switch (WashingStep) {
         case FILLING:
+            WaterValve_ON();
+            if (cycle_init_state) {
+                LoadTimer(FILL_DRAIN_TIMER,T_1MIN*5);
+                cycle_init_state = 0;
+                return;
+            }
+                      
+            if (PR_LO == ON)  {
+                // Nível do pressostado indica fim de enchimento
+                WaterValve_OFF();
+                LoadTimer(WASH_TIMER,T_1SEC*15);
+                WashingStep = WASHING;
+                cycle_init_state = 1;
+            } else if (TimerExpired(FILL_DRAIN_TIMER)) {
+                // Timeout de enchimento
+                  __asm("nop\n");
+            }            
             break;
-        case WASHING:
+            
+        case WASHING:  
+            if (cycle_init_state == 1)
+            { 
+                ResumeTimer(WASH_TIMER);
+                StrokeOn(280,320);
+                cycle_init_state = 0;
+                return;
+            }
+            
+            if (TimerExpired(WASH_TIMER)) {
+                StrokeOff();
+                WashingStep = DRAINING;
+            }
             break;
+            
         case DRAINING:
+            DrainPump_ON();
+            if (cycle_init_state) {
+                LoadTimer(FILL_DRAIN_TIMER,T_1MIN*5);
+                cycle_init_state = 0;
+                return;
+            }             
+            
+            if (PR_LO == OFF)  {
+             LoadTimer(WASH_TIMER,T_1SEC*15);
+             WashingStep = SPINNING;
+             cycle_init_state = 1;
+            } else if (TimerExpired(FILL_DRAIN_TIMER)) {
+              // Timeout de drenagem
+                __asm("nop\n");             
+            }
             break;
+            
         case SPINNING:
+            DrainPump_ON();
+            
+            if (cycle_init_state) {
+                if (TimerExpired(WASH_TIMER)) {
+                 MtCW_ON();
+                 LoadTimer(WASH_TIMER,T_1SEC*10);
+                 cycle_init_state = 0;     
+             }
+             return;
+            }
+                
+            MtCW_ON();
+            
+            if (TimerExpired(WASH_TIMER)) {
+                Mt_OFF();
+                LoadTimer(WASH_TIMER,T_1SEC*30);
+                WashingStep = END_STEP;        
+             }
+                       
             break;
-    }
-    return;
+            
+        case END_STEP:
+            DrainPump_ON();
+            Mt_OFF();
+            if (TimerExpired(WASH_TIMER)) {
+                 DrainPump_OFF();
+                 WashingStep = FILLING;
+                 WashingPhase = RINSE_PHASE;
+                 cycle_init_state = 1;
+            } 
+            break;
+            
+        default:
+         __asm("nop\n");    
+        
+    }     
 };
 
 void Rinse(void){
-    switch (WashingPhaseStep) {
+   switch (WashingStep) {
         case FILLING:
+            WaterValve_ON();
+            if (cycle_init_state) {
+                LoadTimer(FILL_DRAIN_TIMER,T_1MIN*5);
+                cycle_init_state = 0;
+                return;
+            }
+                      
+            if (PR_LO == ON)  {
+                // Nível do pressostado indica fim de enchimento
+                WaterValve_OFF();
+                LoadTimer(WASH_TIMER,T_1SEC*15);
+                WashingStep = WASHING;
+                cycle_init_state = 1;
+            } else if (TimerExpired(FILL_DRAIN_TIMER)) {
+                // Timeout de enchimento
+                  __asm("nop\n");
+            }            
             break;
-        case WASHING:
+            
+        case WASHING:  
+            if (cycle_init_state == 1)
+            { 
+                ResumeTimer(WASH_TIMER);
+                StrokeOn(280,320);
+                cycle_init_state = 0;
+                return;
+            }
+            
+            if (TimerExpired(WASH_TIMER)) {
+                StrokeOff();
+                WashingStep = DRAINING;
+            }
             break;
+            
         case DRAINING:
+            DrainPump_ON();
+            if (cycle_init_state) {
+                LoadTimer(FILL_DRAIN_TIMER,T_1MIN*5);
+                cycle_init_state = 0;
+                return;
+            }             
+            
+            if (PR_LO == OFF)  {
+               WashingPhase = SPIN_PHASE; 
+               WashingStep = SPINNING;
+               cycle_init_state = 1;
+            } else if (TimerExpired(FILL_DRAIN_TIMER)) {
+              // Timeout de drenagem
+                __asm("nop\n");             
+            }
             break;
-        case SPINNING:
-            break;
-    }
-     return;
+            
+        default:
+         __asm("nop\n");    
+        
+    }     
 };
 
 void Spin(void){
-    switch (WashingPhaseStep) {
-        case DRAINING:
-            break;
+    switch (WashingStep) {
+                          
         case SPINNING:
+            DrainPump_ON();
+            
+            if (cycle_init_state) {
+                if (TimerExpired(WASH_TIMER)) {
+                 MtCW_ON();
+                 LoadTimer(WASH_TIMER,T_1SEC*10);
+                 cycle_init_state = 0;     
+             }
+             return;
+            }
+                
+            MtCW_ON();
+            
+            if (TimerExpired(WASH_TIMER)) {
+                Mt_OFF();
+                LoadTimer(WASH_TIMER,T_1SEC*30);
+                WashingStep = END_STEP;        
+             }
+                       
             break;
-    }
-    return;
+            
+        case END_STEP:
+            DrainPump_ON();
+            Mt_OFF();
+            if (TimerExpired(WASH_TIMER)) {
+                 DrainPump_OFF();
+                 WashingPhase = DONE;
+            } 
+            break;
+            
+        default:
+         __asm("nop\n");    
+        
+    }    
 };
 
-void WashingCycleManager(void) {
+washing_phases_t WashingCycleManager(void) {
     WashingPhases[WashingPhase]();
+    
+    if (WashingStep == WASHING)
+     AgitateManager();
+    
+    return WashingPhase;
 };

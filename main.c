@@ -29,19 +29,21 @@
 // Use project enums instead of #define for ON and OFF.
 
 #include <xc.h>
+#include "main.h"
 #include "IO.h"
 #include "Timers.h"
 #include "cycle.h"
+#include "UI.h"
 
 
 
 unsigned char task = 0;
 unsigned char conta_250us = 0;
 unsigned char conta_1ms = 0;
-enum { STANDBY = 0,PAUSE, WASH} ProductState;
 
 void Init(void) {
     InitIO();
+    UIInit();
     T2CON = 0x01;   // Timer2: Pre 1:4 Post 1:1
     PR2 = 124;    // Timer2 overflow @ 250 us
     PIE2 = 0;
@@ -51,25 +53,38 @@ void Init(void) {
     INTCONbits.GIE = 1;
     TMR2ON = 1;
     InitTimer();
-    ProductState = WASH;
+    ProductState = STANDBY;
     WashingPhase = PRE_WASH_PHASE;
-    WashingPhaseStep = FILLING;     
+    WashingStep = FILLING;     
 }
 
 void StateManager() {
-    switch (ProductState) {
-        case STANDBY:
-            break;
-        case PAUSE:
-            break;
-        case WASH:
-            WashingCycleManager();
-            break;
-    }
+  
+ switch (ProductState) {        
+   case STANDBY: 
+   case PAUSE:
+    AllOutputsOff(); 
+    StrokeOff();      
+    break;
+
+   case WASH:
+    // tampa aberta transiciona para estado PAUSE
+    if (Input.bit.Lid == OPEN) {
+     PauseTimer(WASH_TIMER);
+     PrevProductState = ProductState;
+     ProductState = PAUSE;      
+    } 
+    else if (WashingCycleManager() == DONE) {
+     PrevProductState = WASH;
+     ProductState = STANDBY;
+    } 
+     break;
+ }
 }
-void main(void) {
-    Init();
     
+void main(void) {
+    
+    Init();    
     while (1) 
      if (conta_1ms < 5) {
       __asm("nop\n");
@@ -84,14 +99,13 @@ void main(void) {
              TimerMgr();
             break;
         case 1:
-            __asm("nop\n");
-            //UIManager();
+            UIManager();
             break;
         case 2:
             StateManager();
             break;
         case 3:
-            AgitateManager();
+            __asm("nop\n");
             task = 0;
             break;
         default:
@@ -118,7 +132,7 @@ void __interrupt() ISR() {
            InputDebounceHandler();
            break;
           case 1:
-           //UserInterfaceDrv();         
+           UIDrv();         
            break;
           case 2:
            __asm("nop\n");

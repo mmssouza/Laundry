@@ -37,13 +37,17 @@ typedef struct {
 
 timer_t Timer[N_TIMERS];
 
+#define TimerOn(index) ((Timer[index].counter != 0) && (Timer[index].flags.on == 1))
+#define TimerPaused(index) ((Timer[index].counter != 0) && (Timer[index].flags.on == 0))
+
 void InitTimer(void);
 void TimerMgr(void);
 void LoadTimer(uint8_t index, uint16_t Value);
 void ClearTimer(uint8_t index);
 void ResumeTimer(uint8_t index); 
 void PauseTimer(uint8_t index);
-uint8_t TimerExpired(uint8_t index);     
+uint8_t TimerExpired(uint8_t index);
+
 
 #ifdef	__cplusplus
 }

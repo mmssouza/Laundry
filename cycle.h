@@ -27,16 +27,16 @@ ActionFunc const WashingPhases[] = {
         Rinse,   // Index 2
         Spin    };
 
- typedef enum { PRE_WASH_PHASE = 0,WASH_PHASE,RINSE_PHASE,SPIN_PHASE } washing_phases_t;    // 4. Call a function dynamically via an index
+ typedef enum { PRE_WASH_PHASE = 0,WASH_PHASE,RINSE_PHASE,SPIN_PHASE, DONE } washing_phases_t;    // 4. Call a function dynamically via an index
  
- typedef enum {FILLING = 0,WASHING,DRAINING,SPINNING,END_STEP} washing_phases_step_t; 
+ typedef enum {FILLING = 0,WASHING,DRAINING,SPINNING,END_STEP} washing_step_t; 
  
  washing_phases_t WashingPhase; 
- washing_phases_step_t WashingPhaseStep;
- 
+ washing_step_t WashingStep;
+ uint8_t cycle_init_state = 1;
 
     // Execute the target function directly
- void WashingCycleManager(void);   
+washing_phases_t WashingCycleManager(void);   
 
 
 #ifdef	__cplusplus

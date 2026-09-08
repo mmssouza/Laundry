@@ -16,6 +16,9 @@ extern "C" {
     
 #define OFF 0
 #define ON  1
+
+#define OPEN 0 
+#define CLOSE 1
     
 // Outputs 
 #define Water_Valve PORTCbits.RC0 
@@ -24,10 +27,11 @@ extern "C" {
 #define Motor_CCW   PORTCbits.RC3
 
 // Inputs 
+#define LID         PORTCbits.RC7 
 #define PR_LO       PORTCbits.RC6    
 #define PR_MID      PORTCbits.RC5
 #define PR_HI       PORTCbits.RC4 
-
+ 
 typedef union {
     uint8_t byte;
     struct {

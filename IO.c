@@ -2,7 +2,7 @@
 #include <xc.h>
 #include "IO.h"
 
-#define DURATION 10; // 50ms
+#define DURATION 10 // 50ms
 
 void InitIO(void) {    
     AllOutputsOff();
@@ -28,6 +28,7 @@ void InputDebounceHandler(void) {
   current.bit.Pr_Lo = PR_LO;
   current.bit.Pr_Hi = PR_HI; 
   current.bit.Pr_Mid = PR_MID;
+  current.bit.Lid = LID;
   
   if (Init) {    
         Tmr = DURATION;

@@ -51,7 +51,8 @@ void ClearTimer(uint8_t index) {
 }
 
 void ResumeTimer(uint8_t index) { 
-    Timer[index].flags.on = 1;
+    if (TimerPaused(index)) 
+     Timer[index].flags.on = 1;
 }
 
 void PauseTimer(uint8_t index){ 
